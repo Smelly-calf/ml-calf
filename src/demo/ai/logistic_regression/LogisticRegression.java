@@ -1,17 +1,14 @@
-/*******************************************************************************
- * Linear Regression Demo Code
- * Author: Du Ke  (xadke@cn.ibm.com)
- * Date: 2018-8-10
- * The code just for study.
- *******************************************************************************/
-package demo.ai.linear_regression;
+package demo.ai.logistic_regression;
+
+import demo.ai.linear_regression.LinearRegression;
+import demo.ai.utils.Calculate;
+import demo.ai.utils.Matrix;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
-import demo.ai.utils.Matrix;
-
-public class LinearRegression {
+public class LogisticRegression extends LinearRegression {
 
     public static final int METHOD_GRADIENT_DESCENT = 0;    // 梯度下降法
     public static final int METHOD_NORMAL_EQUATIONS = 1;    // 正规方程法
@@ -29,6 +26,7 @@ public class LinearRegression {
     private float[][] parametersT;            // 参数矩阵的转置矩阵 = Matrix.transpose(parameters);
 
     private float[][] A;                    // 中间计算矩阵 A = new float[m][1];
+    private float[][] g;                   // 中间计算矩阵 g = 1/1+e^(-A)
     private float[][] E;                    // 中间计算矩阵 E= new float[m][1];
     private float[][] a_times_xT_times_E;    // 中间计算矩阵 a*xT*E = new float[n][1];
 
@@ -43,24 +41,16 @@ public class LinearRegression {
     private float totalErrorAvgPercent = 0;    // 总体平均误差比
     private float[][] parametersCopy;        // 参数拷贝
 
-    private float distAvg;
-    private float percent;
-
-
-    public LinearRegression() {
+    public LogisticRegression() {
     }
 
-    ////////////////////////////////////////////////////////////
-
+    @Override
     public void setXY(float[][] x, float[][] y) throws Exception {
         setX(x);
         setY(y);
     }
 
-    public float[][] getX() {
-        return x;
-    }
-
+    @Override
     public void setX(float[][] x) throws Exception {
         this.x = x;
         this.xT = Matrix.transpose(x);
@@ -69,98 +59,54 @@ public class LinearRegression {
 
         this.parameters = new float[1][n];
         this.A = new float[m][1];
+        this.g = new float[m][1];
         this.E = new float[m][1];
         this.a_times_xT_times_E = new float[n][1];
     }
 
-    public float[][] getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(float[][] parameters) {
-        this.parameters = parameters;
-    }
-
-    public float[][] getY() {
-        return y;
-    }
-
+    @Override
     public void setY(float[][] y) {
         this.y = y;
     }
 
-    public float getStep() {
-        return step;
+    public float[][] getX() {
+        return this.x;
     }
 
-    public void setStep(float alpha) {
-        this.step = alpha;
+    public float[][] getY() {
+        return this.y;
     }
 
-    public int getIterationTimes() {
-        return iterationTimes;
-    }
 
-    public void setIterationTimes(int iterationTimes) {
-        this.iterationTimes = iterationTimes;
-    }
-
-    public int getMoitorCount() {
-        return moitorCount;
-    }
-
-    public void setMoitorCount(int moitorCount) {
-        this.moitorCount = moitorCount;
-    }
-
-    public ArrayList<HashMap> getMoitorTraining() {
-        return moitorTraining;
-    }
-
-    public void setMoitorTraining(ArrayList<HashMap> moitorTraining) {
-        this.moitorTraining = moitorTraining;
-    }
-
-    public ArrayList<HashMap> getMoitorTesting() {
-        return moitorTesting;
-    }
-
-    public void setMoitorTesting(ArrayList<HashMap> moitorTesting) {
-        this.moitorTesting = moitorTesting;
+    public float[][] getParameters() {
+        return parameters;
     }
 
     public float[][] getTestX() {
         return testX;
     }
 
-    public void setTestX(float[][] testX) {
-        this.testX = testX;
-    }
-
     public float[][] getTestY() {
         return testY;
     }
 
-    public void setTestY(float[][] testY) {
-        this.testY = testY;
+    public void setStep(float alpha) {
+        this.step = alpha;
     }
 
-    public float getTotalErrorAvg() {
-        return totalErrorAvg;
+    public void setIterationTimes(int iterationTimes) {
+        this.iterationTimes = iterationTimes;
     }
 
-    public float getTotalErrorAvgPercent() {
-        return totalErrorAvgPercent;
-    }
-
-    ////////////////////////////////////////////////////////////
-
+    @Override
     public void train(float[] initParameters, float initStep, int iterationTimes) throws Exception {
         float[] params;
         float hx;
-        float yValue = 0;// duke
+        float yValue = 0;
         float dist = 0;
         float distAll = 0;
+        float distAvg = 0;
+        float percent = 0;
         float distAvgBefore = 0;
         int moitorStep = (iterationTimes / moitorCount);
         float moitorDiv;
@@ -187,8 +133,9 @@ public class LinearRegression {
             // (1) 求 A = x * parameters;
             Matrix.times(x, parametersT, A);
 
-            // (2) 求 E = A - y
-            Matrix.add(A, -1, y, E);
+            // (2) 求 求 E = g(A) - y
+            Calculate.sigmoid(A, g);
+            Matrix.add(g, -1, y, E);
 
             // (3) 求 parametersT := parametersT - a * xT * E
             Matrix.times(a_times_xT, E, a_times_xT_times_E);
@@ -214,74 +161,86 @@ public class LinearRegression {
 
             // 监控数据
             moitorDiv = times % moitorStep;
-            monitorItemToMonitortraining(times, moitorDiv);
+            if (times < 10 || times > iterationTimes - 10 || (moitorDiv == 0.0)) {
+                HashMap monitorItem = new HashMap();
+                monitorItem.put("times", times);
+                monitorItem.put("distAvg", distAvg);
+                monitorItem.put("distAvgPercent", percent);
+                monitorItem.put("parameters", Matrix.copy(parameters));  // 记录本次参数
+                moitorTraining.add(monitorItem);
+            }
         }
     }
 
-    public void monitorItemToMonitortraining(int times, float moitorDiv) throws Exception {
-        if (times < 10 || times > iterationTimes - 10 || (moitorDiv == 0.0)) {
-            HashMap monitorItem = new HashMap();
-            monitorItem.put("times", times);
-            monitorItem.put("distAvg", distAvg);
-            monitorItem.put("distAvgPercent", percent);
-            monitorItem.put("parameters", Matrix.copy(parameters));  // 记录本次参数
-            moitorTraining.add(monitorItem);
-        }
+    public ArrayList<HashMap> getMoitorTraining() {
+        return moitorTraining;
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // 测试模型
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //测试单行数据
+    public float test(int method, float[] x, float y, float[][] parameters) throws Exception {
+        return hypothesize(x, parameters);
+    }
 
     // 假设函数
     public float hypothesize(float[] x, float[][] parameters) throws Exception {
         parametersCopy = Matrix.copy(parameters, parametersCopy);
         float[] p = parametersCopy[0];
         float hx = Matrix.dotProduct(x, p);
-        return hx;
-    }
+        return 1 / (float) (1 + Math.exp(-hx));
 
-    // 假设函数
-    public float hypothesize(float[] x) throws Exception {
-        return hypothesize(x, this.parameters);
-    }
-
-    // 测试单行数据
-    public float test(int method, float[] x, float y, float[][] parameters) throws Exception {
-        return hypothesize(x, parameters);
-    }
-
-    // 测试单行数据
-    public float test(int method, float[] x, float y) throws Exception {
-        return hypothesize(x, this.parameters);
     }
 
     // 测试数据集
     public ArrayList<HashMap> test(int method, float[][] testX, float[][] testY, float[][] parameters) throws Exception {
-        moitorTesting = new ArrayList<HashMap>();
+        moitorTesting = new ArrayList<>();
         int testCount = testX.length;
         totalErrorAvg = 0;
         totalErrorAvgPercent = 0;
-        for (int i = 0; i < testX.length; i++) {
+
+        //先添加 y==0
+        int j=0;
+        for(int i = 0; i < testX.length; i++){
             float[] x = testX[i];
             float y = testY[i][0];
-            float hy = test(method, x, y, parameters);
-            float error = Math.abs(hy - y);        //误差
-            float errorPercent = error / y;
-            totalErrorAvg += error / testCount;
-            totalErrorAvgPercent += (error / y) / testCount;
-            HashMap monitorItem = new HashMap();
-            monitorItem.put("index", i);
-            monitorItem.put("realY", y);
-            monitorItem.put("hypotheticalY", hy);
-            monitorItem.put("error", error);
-            monitorItem.put("errorPercent", errorPercent);
-            moitorTesting.add(monitorItem);
+            if(y==0){
+                float hy = test(method, x, y, parameters);
+                float error = Math.abs(hy - y);        //误差
+                float errorPercent = error / y;
+                totalErrorAvg += error / testCount;
+                totalErrorAvgPercent += (error / y) / testCount;
+                HashMap monitorItem = new HashMap();
+                monitorItem.put("index", j++);
+                monitorItem.put("realY", y);
+                monitorItem.put("hypotheticalY", hy);
+                monitorItem.put("error", error);
+                monitorItem.put("errorPercent", errorPercent);
+                moitorTesting.add(monitorItem);
+            }
+        }
+
+        //再添加 y==1
+        int k=j+1;
+        for(int i = 0; i < testX.length; i++){
+            float[] x = testX[i];
+            float y = testY[i][0];
+            if(y==1){
+                float hy = test(method, x, y, parameters);
+                float error = Math.abs(hy - y);        //误差
+                float errorPercent = error / y;
+                totalErrorAvg += error / testCount;
+                totalErrorAvgPercent += (error / y) / testCount;
+                HashMap monitorItem = new HashMap();
+                monitorItem.put("index", k++);
+                monitorItem.put("realY", y);
+                monitorItem.put("hypotheticalY", hy);
+                monitorItem.put("error", error);
+                monitorItem.put("errorPercent", errorPercent);
+                moitorTesting.add(monitorItem);
+            }
         }
         return moitorTesting;
     }
 
-    // 测试数据集
     public ArrayList<HashMap> test(int method, float[][] testX, float[][] testY) throws Exception {
         this.testX = testX;
         this.testY = testY;
@@ -290,9 +249,8 @@ public class LinearRegression {
         return moitorTesting;
     }
 
-
-    public static void main(String[] args) {
-
+    public ArrayList<HashMap> getMoitorTesting() {
+        return moitorTesting;
     }
 
 }

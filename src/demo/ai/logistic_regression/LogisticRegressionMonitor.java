@@ -1,21 +1,17 @@
-/*******************************************************************************
- * Linear Regression Demo Code
- * Author: Du Ke  (xadke@cn.ibm.com)
- * Date: 2018-8-10
- * The code just for study.
- *******************************************************************************/
-package demo.ai.linear_regression;
+package demo.ai.logistic_regression;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
+import demo.ai.linear_regression.LinearRegression;
+import demo.ai.linear_regression.LinearRegressionMonitor;
 import demo.ai.utils.Line;
 import demo.ai.utils.LineChart;
 import demo.ai.utils.Matrix;
 
-public class LinearRegressionMonitor {
+import java.util.ArrayList;
+import java.util.HashMap;
 
-    public void showResult(LinearRegression LR, double yAxisMax1, double yAxisMax2) throws Exception {
+public class LogisticRegressionMonitor extends LinearRegressionMonitor {
+
+    public void showResult(LogisticRegression LR, double yAxisMax1, double yAxisMax2) throws Exception {
 
         float[][] parameters = LR.getParameters();
 
@@ -42,8 +38,6 @@ public class LinearRegressionMonitor {
         Line testLine2 = new Line("预测值");
         ArrayList<HashMap> moitorTesting = LR.getMoitorTesting();
         predCurve(moitorTesting, testChart, testLine1, testLine2);
-
-
         // 动画拟合
         testChart.removeLine(testLine2);
         for (int i = 10; i < moitor.size(); i++) {
@@ -64,39 +58,5 @@ public class LinearRegressionMonitor {
         }
     }
 
-    public void monitorOutput(double yAxisMax1, ArrayList<HashMap> moitor) {
-        LineChart chart = new LineChart("收敛曲线", yAxisMax1);
-        Line line1 = new Line("收敛百分比");
-        Line line2 = new Line("收敛值");
-        for (int i = 0; i < moitor.size(); i++) {
-            HashMap item = moitor.get(i);
-            float times = (Integer) item.get("times") * 1.0f;   //(Float)item.get("times");
-            float avgPercent = (Float) item.get("distAvgPercent");
-            float avg = (Float) item.get("distAvg");
-            if (i >= 10) {
-                line1.addPoint(times, avgPercent);
-                line2.addPoint(times, avg);
-            }
-            if (i < 10 || i > moitor.size() - 10) {
-                System.out.println(" >>>>>>>>>>>>>>> 迭代：" + (times + 1) + "\t平均误差：" + String.format("%.6f", avg) + "\t收敛百分比：" + String.format("%.6f", avgPercent) + " %");
-            }
-        }
-        chart.addLine(line2);
-        chart.run();
-    }
-
-    public void predCurve(ArrayList<HashMap> moitorTesting, LineChart testChart, Line testLine1, Line testLine2){
-        for (int i = 0; i < moitorTesting.size(); i++) {
-            HashMap item = moitorTesting.get(i);
-            float idx = (Integer) item.get("index") * 1.0f;
-            float realY = (Float) item.get("realY");
-            float hypotheticalY = (Float) item.get("hypotheticalY");
-            testLine1.addPoint(idx, realY);
-            testLine2.addPoint(idx, hypotheticalY);
-        }
-        testChart.addLine(testLine1);
-        testChart.addLine(testLine2);
-        testChart.run();
-    }
 
 }

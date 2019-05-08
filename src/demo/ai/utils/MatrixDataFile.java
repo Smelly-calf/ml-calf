@@ -170,8 +170,7 @@ public class MatrixDataFile {
 	}
 
 	public float[][] getY() throws Exception{
-		ArrayList<float[][]> xy = get();
-		return xy.get(1);
+		return this.get().get(1);
 	}
 	
 	//获取矩阵数据，开头的first条记录
@@ -182,6 +181,10 @@ public class MatrixDataFile {
 	//获取矩阵数据，最后的last条记录
 	public ArrayList<float[][]> getLast(int last) throws Exception{
 		return this.get(data.size()-last+1, -1);
+	}
+
+	public ArrayList<float[][]> getColumn(int from, int to) throws Exception{
+		return this.get(data.size()-from+1,-1);
 	}
 
 }
