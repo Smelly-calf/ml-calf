@@ -35,9 +35,10 @@ public class LogisticRegressionMonitor extends LinearRegressionMonitor {
         // 预测拟合曲线
         LineChart testChart = new LineChart("预测曲线", yAxisMax2);
         Line testLine1 = new Line("实际值");
+        Line line05 = new Line("");
         Line testLine2 = new Line("预测值");
         ArrayList<HashMap> moitorTesting = LR.getMoitorTesting();
-        predCurve(moitorTesting, testChart, testLine1, testLine2);
+        predCurve(moitorTesting, testChart, testLine1, testLine2, line05);
         // 动画拟合
         testChart.removeLine(testLine2);
         for (int i = 10; i < moitor.size(); i++) {
@@ -56,6 +57,22 @@ public class LogisticRegressionMonitor extends LinearRegressionMonitor {
             Thread.sleep(50);
             if (i < moitor.size() - 1) testChart.removeLine(testLineTmp);
         }
+    }
+
+    public void predCurve(ArrayList<HashMap> moitorTesting, LineChart testChart, Line testLine1, Line testLine2, Line line05){
+        for (int i = 0; i < moitorTesting.size(); i++) {
+            HashMap item = moitorTesting.get(i);
+            float idx = (Integer) item.get("index") * 1.0f;
+            float realY = (Float) item.get("realY");
+            float hypotheticalY = (Float) item.get("hypotheticalY");
+            line05.addPoint(idx, 0.5f);
+            testLine1.addPoint(idx, realY);
+            testLine2.addPoint(idx, hypotheticalY);
+        }
+        testChart.addLine(testLine1);
+        testChart.addLine(line05);
+        testChart.addLine(testLine2);
+        testChart.run();
     }
 
 

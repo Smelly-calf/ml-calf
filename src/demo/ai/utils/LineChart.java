@@ -127,13 +127,22 @@ public class LineChart {
 		if(yAxisMax>0) yAxis.setRange(0, yAxisMax);									// 纵轴范围
 		yAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());			// 纵轴单位
 		yAxis.setLabelFont(new Font("黑体", Font.PLAIN, 15));						// 设置纵轴的字体 
-		yAxis.setUpperMargin(0.15);													// 设置最高数据显示与顶端的距离
-		yAxis.setLowerMargin(0);													// 设置最低的一个值与图片底端的距离
+		yAxis.setUpperMargin(0.5);													// 设置最高数据显示与顶端的距离
+		yAxis.setLowerMargin(2);													// 设置最低的一个值与图片底端的距离
 		
 		
 		XYLineAndShapeRenderer shape = (XYLineAndShapeRenderer)plot.getRenderer();	// 数据点
-        shape.setShapesVisible(true); 												// 数据点可见
-        shape.setShapesFilled(true); 												// 数据点被填充即不是空心点
+        shape.setBaseLinesVisible(true); 												// 数据点可见
+        shape.setBaseShapesFilled(true); 												// 数据点被填充即不是空心点
+		// 设置拐点是否可见/是否显示拐点
+		shape.setBaseShapesVisible(true);
+		// 设置拐点不同用不同的形状
+		shape.setDrawOutlines(true);
+		// 设置线条是否被显示填充颜色
+		shape.setUseFillPaint(true);
+		// 设置拐点颜色
+		shape.setBaseFillPaint(Color.blue);//蓝色
+
         
         
 		jfreechart.getLegend().setItemFont(new Font("黑体", Font.BOLD, 15));			// 图例字体
